@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Content Studio Collection 1.0",
+  "type": "object",
+  "required": [
+    "schema",
+    "schemaVersion",
+    "batchId",
+    "collectedAt",
+    "producer",
+    "items"
+  ],
+  "properties": {
+    "schema": {
+      "const": "content-studio.collection"
+    },
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "batchId": {
+      "type": "string",
+      "maxLength": 300,
+      "minLength": 1
+    },
+    "collectedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 300,
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "maxLength": 300,
+          "minLength": 1
+        }
+      }
+    },
+    "sample": {
+      "type": "boolean",
+      "default": false
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": [
+          "externalId",
+          "type",
+          "title"
+        ],
+        "properties": {
+          "externalId": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "note",
+              "account",
+              "image",
+              "text"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1
+          },
+          "platform": {
+            "enum": [
+              "小红书",
+              "抖音",
+              "X"
+            ],
+            "default": "小红书"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 2500,
+            "pattern": "^(https?://.*)?$"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 40000
+          },
+          "author": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "publishedAt": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "const": ""
+              }
+            ]
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "views": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "likes": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "comments": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "saves": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "shares": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 50,
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            }
+          },
+          "rights": {
+            "enum": [
+              "unknown",
+              "owned",
+              "authorized",
+              "reference"
+            ]
+          },
+          "sample": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,32 @@
+{
+  "schema": "content-studio.collection",
+  "schemaVersion": "1.0",
+  "batchId": "example-001",
+  "collectedAt": "2026-10-20T12:00:00Z",
+  "producer": {
+    "name": "示例文件（非真实采集）",
+    "version": "0.1.0"
+  },
+  "sample": true,
+  "items": [
+    {
+      "externalId": "example-note-001",
+      "type": "note",
+      "platform": "小红书",
+      "title": "示例：一次场景问题如何拆成图文选题",
+      "url": "",
+      "content": "这是一条接口示例，不是真实小红书笔记。",
+      "author": "示例作者",
+      "publishedAt": "",
+      "metrics": {
+        "likes": null,
+        "saves": null
+      },
+      "tags": [
+        "示例"
+      ],
+      "rights": "reference",
+      "sample": true
+    }
+  ]
+}
