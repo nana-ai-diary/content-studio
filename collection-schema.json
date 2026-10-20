@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Content Studio Collection 1.0",
+  "title": "Content Studio Collection 1.0 / 1.1",
   "type": "object",
   "required": [
     "schema",
@@ -15,7 +15,10 @@
       "const": "content-studio.collection"
     },
     "schemaVersion": {
-      "const": "1.0"
+      "enum": [
+        "1.0",
+        "1.1"
+      ]
     },
     "batchId": {
       "type": "string",
@@ -148,6 +151,13 @@
                   "null"
                 ],
                 "minimum": 0
+              },
+              "followers": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0
               }
             },
             "additionalProperties": false
@@ -171,6 +181,14 @@
           "sample": {
             "type": "boolean",
             "default": false
+          },
+          "authorId": {
+            "type": "string",
+            "maxLength": 300
+          },
+          "format": {
+            "type": "string",
+            "maxLength": 300
           }
         },
         "additionalProperties": true

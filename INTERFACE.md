@@ -1,8 +1,8 @@
 # 内容工坊 × 独立采集工具 接口
 
 协议：content-studio.collection  
-版本：1.0  
-网页版本：2.0.0  
+版本：1.0 / 1.1（兼容读取）  
+网页版本：2.1.0  
 更新：2026-10-20
 
 ## 边界
@@ -14,7 +14,7 @@
 ## 顶层字段
 
 - schema（必填）：固定content-studio.collection。
-- schemaVersion（必填）：字符串1.0。未知版本整批拒绝，不猜测兼容。
+- schemaVersion（必填）：字符串1.0或1.1。未知版本整批拒绝，不猜测兼容。
 - batchId（必填）：生产者稳定的批次ID，最长300字符。
 - collectedAt（必填）：带时区的ISO 8601日期时间，例如2026-10-20T12:00:00Z。
 - producer（必填）：name与version两个非空字符串。
@@ -70,3 +70,70 @@ StudioRecord有id、kind、data、version、createdAt、updatedAt。kind包括pr
 - collection-schema.json：JSON Schema Draft 2020-12，可供采集项目校验输出。
 
 协议修改须升级版本、记录变更、保留迁移测试，并由两个项目联调；不依赖共享代码目录或同一个浏览器会话。
+
+
+## 第二轮扩展：采集结果 1.1
+
+仍使用 content-studio.collection。1.0 文件继续有效；新采集工具建议输出 schemaVersion 字符串 1.1。
+
+- items[].authorId：可选，小红书作者稳定 ID（最长300字符），作品用于匹配主页 externalId；不能把显示名称当稳定ID。
+- items[].format：可选，建议“图文”“视频”“未知”，未提供时显示体裁未提供。
+- items[].metrics.followers：可选，非负数或 null。对于 type=account 表示采集时账号粉丝数；对于笔记如提供则表示笔记涨粉，不用于判断作者低粉。
+- 账号条目 externalId 为主页 ID。笔记 externalId 为笔记 ID，authorId 为所属作者。collectedAt 为真实采集时点，publishedAt 为作品实际发布时间。
+- 只关联用户确认属于该博主的素材，不凭同名作者自动归并。最新采集观察指标供对标研究使用，人工正文与归属保留。
+- 对标默认只分析已导入样本；缺少粉丝数不参与低粉筛选，缺少发布日期不参与近期筛选。粉丝采样时点与作品发布时点不同，不推定发布时粉丝数。
+
+## 主页采集请求 1.0
+
+网页导出给独立采集项目；不是网页内执行采集。schema 固定 content-studio.collection-request，schemaVersion 字符串1.0。
+
+```json
+{"schema":"content-studio.collection-request","schemaVersion":"1.0","requestId":"unique-id","requestedAt":"2026-10-20T12:00:00Z","platform":"小红书","profileUrl":"https://www.xiaohongshu.com/user/profile/example","authorId":"example","range":{"recentDays":30},"include":["account","notes"],"expectedResultSchema":"content-studio.collection/1.1"}
+```
+
+采集工具按授权和站点规则生成 collection 1.1；网页仍通过文件预览、选择归属、合并导入，随后在对标页关联作品。网页不根据请求文件伪造采集成功。
+
+## Excel与复盘观察
+
+新增 performance 记录，属于用户自己的 accountId，不要求 draftId。字段包含 mode(initial/review)、periodStart/periodEnd、capturedAt、origin、files、notes、summary、trends、audience、images、warnings、digest、aiAnalysis、suggestions、verified、sample。
+
+- notes 保存标题、发布日期、体裁、规范指标及 raw 原始列；所有数字缺失为 null，不补0。ctr 统一为百分数，例如源0.088显示8.8；源12%显示12。原始列仍保留。
+- summary 是 name/value/unit 的周期汇总；trends 是 name/date/value/unit 的每日序列；audience 是画像与来源占比。三个集合互不相加；平均点击率不把每日比率简单相加。
+- 笔记表头可位于第一行之后，支持“笔记标题”“首次发布时间”“体裁”“曝光”“观看量”“封面点击率”“点赞”“评论”“收藏”“涨粉”“分享”“人均观看时长”“弹幕”等。未知列保留在raw；未识别工作表明确提示，未入库。
+- Excel仅支持.xlsx；单文件8MB、一次最多8个文件、每表5000数据行、最多30个工作表。识别后需要核对再入库，不存原始工作簿字节。
+- 没有趋势表时不把笔记发布时间冒充统计周期，由用户对照后台填写；趋势存在时按实际日期提出周期，仍需核对。
+- 截图每批最多6张，单原件12MB，压缩副本合计1.2MB；完整备份包含副本，非原始图片。历史快照只存图片名称说明。
+- 同一账号相同观察指纹不重复；不同导出时点只要数值变化就另存，不覆盖以往观察。指纹不含文件名或AI文本。
+- 新任务及复盘档案可带reportId，必须与目标账号一致，备份冲突恢复时与其他关联一起重映射。
+
+## 截图识别结果 1.0
+
+结果只进当前预览，用户必须核对数字、单位、周期再确认入库。截图本身不是可核验的OCR文本；模型不能确定的值返回null，曲线无标注时不得猜数。
+
+```json
+{"schema":"content-studio.screenshot","schemaVersion":"1.0","summary":[{"name":"近7日总粉丝数｜文件名","value":null,"unit":"人"}],"audience":[{"name":"女性比例｜文件名","value":null,"unit":"%"}],"notes":[],"analysis":"证据、观察、限制与建议","suggestions":["一个可验证的实验"]}
+```
+
+summary/audience条目为name/value/unit；百分数89%写89。notes结构为title、publishedAt、format、metrics（非负数或null），可带raw原始字段。不同截图周期需写入指标名称，避免近7日和近30日合并。仅识别截图不能恢复图中未标注的每日明细。
+
+## AI复盘／对标结果
+
+```json
+{"analysis":"包含笔记标题、指标或证据ID的观察；推测与限制明确区分","suggestions":["可执行操作与衡量方法"]}
+```
+
+默认外部AI复制提示词和材料包，再导回JSON。可选兼容Chat Completions完整HTTPS地址、模型和密钥，用户点击发送后才提交本次材料；截图用image_url内容块，需要视觉模型。配置只在页面内存，不导出、不持久化；服务需允许跨域，未配置不自动发送。对标AI结果为待人工判断的建议，复盘数据需勾选核对才能保存。
+
+## 飞书导出与桥接请求 1.0
+
+默认生成含BOM的UTF-8 CSV，可在飞书多维表格手动导入；CSV不等于自动写入。字段为博主、主页、账号粉丝数、作品标题、作品链接、发布日期、点赞、收藏、评论、样本标记；对可能的公式开头做转义。
+
+可选用户自己的HTTPS桥接服务：网页POST application/json。
+
+```json
+{"schema":"content-studio.feishu-sync","schemaVersion":"1.0","requestId":"uuid","competitor":{"id":"stable-local-id","externalId":"author-id","profileUrl":"https://www.xiaohongshu.com/user/profile/example","name":"示例","followers":null,"sample":true},"notes":[{"id":"stable-local-id","externalId":"note-id","title":"示例作品","sample":true}]}
+```
+
+实际请求的competitor与notes包含当前档案和选中素材的全部字段。桥接服务负责目标表配置、飞书授权、字段映射、权限、CORS和写入回执；按externalId/本地id执行幂等更新，避免重复新增。不要在静态网页或公开仓库保存app_secret/token。
+
+成功回执必须是HTTP成功且JSON包含provider=feishu与synced=true；否则网页显示失败或未确认，不自动重试。用户应到目标表核对。未配置服务不会向飞书发送数据。桥接实现属于独立集成，不在本网页项目中伪造。
